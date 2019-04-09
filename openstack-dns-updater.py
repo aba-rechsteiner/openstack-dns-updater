@@ -13,37 +13,39 @@
 # systemd script. OpenStack DNS Updater logs into /var/log/nova/dns-updater.log
 # by default.
 
+import os
 import json
 import logging as log
+import powerdns
+import ipaddress
+import configparser
+
+from fqdn import FQDN
 from subprocess import Popen, PIPE
 from kombu import BrokerConnection
 from kombu import Exchange
 from kombu import Queue
 from kombu.mixins import ConsumerMixin
 
-LOG_FILE="/var/log/nova/dns-updater.log"
+config = configparser.ConfigParser()
+config.read(os.environ['CONFIG_FILE'])
 
-EXCHANGE_NAME="nova"
-ROUTING_KEY="notifications.info"
-QUEUE_NAME="dns_updater"
-BROKER_URI="amqp://guest:guest@localhost:5672//"
-EVENT_CREATE="compute.instance.create.end"
-EVENT_DELETE="compute.instance.delete.start"
+LOG_FILE = config['LOGGING']['LOG_FILE']
 
-NAMESERVER="ns.localdomain.com"
-TTL=1
-NSUPDATE_ADD="\
-server {nameserver}\n\
-update delete {hostname} A\n\
-update add {hostname} {ttl} A {hostaddr}\n\
-send"
+EXCHANGE_NAME = config['AMQP']['EXCHANGE_NAME']
+ROUTING_KEY = config['AMQP']['ROUTING_KEY']
+QUEUE_NAME = config['AMQP']['QUEUE_NAME']
+EVENT_CREATE = config['AMQP']['EVENT_CREATE']
+EVENT_DELETE = config['AMQP']['EVENT_DELETE']
+BROKER_URI = config['AMQP']['BROKER_URI']
 
-NSUPDATE_DEL="\
-server {nameserver}\n\
-update delete {hostname} A\n\
-send"
+PDNS_API = config['POWERDNS']['PDNS_API']
+PDNS_KEY = config['POWERDNS']['PDNS_KEY']
 
-log.basicConfig(filename=LOG_FILE, level=log.INFO,
+api_client = powerdns.PDNSApiClient(api_endpoint=PDNS_API, api_key=PDNS_KEY)
+api = powerdns.PDNSEndpoint(api_client)
+
+log.basicConfig(filename=LOG_FILE, level=log.DEBUG,
     format='%(asctime)s %(message)s')
 
 class DnsUpdater(ConsumerMixin):
@@ -55,7 +57,7 @@ class DnsUpdater(ConsumerMixin):
     def get_consumers(self, consumer, channel):
         exchange = Exchange(EXCHANGE_NAME, type="topic", durable=False)
         queue = Queue(QUEUE_NAME, exchange, routing_key = ROUTING_KEY,
-            durable=False, auto_delete=True, no_ack=True)
+            durable=True, auto_delete=False, no_ack=True)
         return [ consumer(queue, callbacks = [ self.on_message ]) ]
 
     def on_message(self, body, message):
@@ -68,20 +70,35 @@ class DnsUpdater(ConsumerMixin):
         log.debug('Body: %r' % body)
         jbody = json.loads(body["oslo.message"])
         event_type = jbody["event_type"]
-        if event_type in [ EVENT_CREATE, EVENT_DELETE ]:
-            hostname = jbody["payload"]["hostname"]
-            if event_type == EVENT_CREATE:
-                hostaddr = jbody["payload"]["fixed_ips"][0]["address"]
-                nsupdate_script = NSUPDATE_ADD
-                log.info("Adding {} {}".format(hostname, hostaddr))
-            else:
-                hostaddr=""
-                nsupdate_script = NSUPDATE_DEL
-                log.info("Deleting {}".format(hostname))
-            p = Popen(['nsupdate'], stdin=PIPE)
-            input = nsupdate_script.format(nameserver=NAMESERVER,
-                hostname=hostname, ttl=TTL, hostaddr=hostaddr)
-            p.communicate(input=input)
+        if event_type == EVENT_CREATE or event_type == EVENT_DELETE:
+            instancename = jbody["payload"]["hostname"]
+            fqdn = instancename + '.'
+            if FQDN(str(fqdn)).is_valid:
+                log.debug('FQDN is valide')
+                suggested_zone = api.servers[0].suggest_zone(fqdn)
+                zone = api.servers[0].get_zone(suggested_zone.name)
+                hostname = fqdn.replace(zone.name, "")
+                record = hostname[:-1]
+                if event_type == EVENT_CREATE:
+                    fixed_ips0 = jbody["payload"]["fixed_ips"][0]["address"]
+                    fixed_ips1 = jbody["payload"]["fixed_ips"][1]["address"]
+                    if ipaddress.IPv4Address(fixed_ips0):
+                        ipv4addr = fixed_ips0
+                        ipv6addr = fixed_ips1
+                    else:
+                        ipv4addr = fixed_ips1
+                        ipv6addr = fixed_ips0
+                    log.info("Adding {} {} {}".format(fqdn, ipv4addr, ipv6addr))
+                    zone.create_records([
+                        powerdns.RRSet(record, 'A', [(ipv4addr, False)]),
+                        powerdns.RRSet(record, 'AAAA', [(ipv6addr, False)]),
+                    ])
+                if event_type == EVENT_DELETE:
+                    log.info("Deleting {}".format(fqdn))
+                    zone.delete_record([
+                        powerdns.RRSet(record, 'A', []),
+                        powerdns.RRSet(record, 'AAAA', []),
+                    ])
 
 if __name__ == "__main__":
     log.info("Connecting to broker {}".format(BROKER_URI))
