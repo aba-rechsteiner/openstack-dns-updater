@@ -31,6 +31,7 @@ config = configparser.ConfigParser()
 config.read(os.environ['CONFIG_FILE'])
 
 LOG_FILE = config['LOGGING']['LOG_FILE']
+LOG_LEVEL = config['LOGGING']['LOG_LEVEL']
 
 EXCHANGE_NAME = config['AMQP']['EXCHANGE_NAME']
 ROUTING_KEY = config['AMQP']['ROUTING_KEY']
@@ -45,7 +46,7 @@ PDNS_KEY = config['POWERDNS']['PDNS_KEY']
 api_client = powerdns.PDNSApiClient(api_endpoint=PDNS_API, api_key=PDNS_KEY)
 api = powerdns.PDNSEndpoint(api_client)
 
-log.basicConfig(filename=LOG_FILE, level=log.DEBUG,
+log.basicConfig(filename=LOG_FILE, level=getattr(logging, LOG_LEVEL),
     format='%(asctime)s %(message)s')
 
 class DnsUpdater(ConsumerMixin):
