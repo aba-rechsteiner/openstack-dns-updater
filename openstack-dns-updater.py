@@ -46,7 +46,7 @@ PDNS_KEY = config['POWERDNS']['PDNS_KEY']
 api_client = powerdns.PDNSApiClient(api_endpoint=PDNS_API, api_key=PDNS_KEY)
 api = powerdns.PDNSEndpoint(api_client)
 
-log.basicConfig(filename=LOG_FILE, level=getattr(logging, LOG_LEVEL),
+log.basicConfig(filename=LOG_FILE, level=getattr(log, LOG_LEVEL),
     format='%(asctime)s %(message)s')
 
 class DnsUpdater(ConsumerMixin):
