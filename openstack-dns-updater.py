@@ -103,5 +103,5 @@ class DnsUpdater(ConsumerMixin):
 
 if __name__ == "__main__":
     log.info("Connecting to broker {}".format(BROKER_URI))
-    with BrokerConnection(BROKER_URI) as connection:
+    with BrokerConnection(BROKER_URI, heartbeat=10) as connection:
         DnsUpdater(connection).run()
