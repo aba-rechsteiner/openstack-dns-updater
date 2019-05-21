@@ -117,7 +117,7 @@ class DnsUpdater(ConsumerMixin):
                     log.info("Deleting {}".format(instancename))
                     result = api.servers[0].search(instancename)
                     i = 0
-                    while i < len(search):
+                    while i < len(result):
                         if result[i]['type'] == 'A' or result[i]['type'] == 'AAAA':
                             fq_ptr = self.get_reverse_pointer(result[i]['content'])
                             ptr_zone = self.suggested_zone(fq_ptr)
