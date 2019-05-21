@@ -97,8 +97,8 @@ class DnsUpdater(ConsumerMixin):
                         ipv4addr = fixed_ips1
                         ipv6addr = fixed_ips0
                     log.info("Adding {} {} {}".format(instancename, ipv4addr, ipv6addr))
-                    fq_ptr_v4 = get_reverse_pointer(ipv4addr)
-                    fq_ptr_v6 = get_reverse_pointer(ipv6addr)
+                    fq_ptr_v4 = self.get_reverse_pointer(ipv4addr)
+                    fq_ptr_v6 = self.get_reverse_pointer(ipv6addr)
                     ptr_v4_zone = self.suggested_zone(fq_ptr_v4)
                     ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
                     ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
@@ -116,8 +116,8 @@ class DnsUpdater(ConsumerMixin):
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(instancename))
                     result = api.servers[0].search(instancename)
-                    fq_ptr_v4 = get_reverse_pointer(result[0]['content'])
-                    fq_ptr_v6 = get_reverse_pointer(result[1]['content'])
+                    fq_ptr_v4 = self.get_reverse_pointer(result[0]['content'])
+                    fq_ptr_v6 = self.get_reverse_pointer(result[1]['content'])
                     ptr_v4_zone = self.suggested_zone(fq_ptr_v4)
                     ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
                     ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
