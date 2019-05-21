@@ -96,15 +96,17 @@ class DnsUpdater(ConsumerMixin):
                     ptr_v6 = ipaddress.ip_address(ipv6addr).reverse_pointer
                     ptr_v4_zone = self.suggested_zone(ptr_v4 + '.')
                     ptr_v6_zone = self.suggested_zone(ptr_v6 + '.')
+                    ptr_v4_name = ptr_v4.replace(ptr_v4_zone.name, "")
+                    ptr_v6_name = ptr_v4.replace(ptr_v6_zone.name, "")
                     #zone.create_records([
                     #    powerdns.RRSet(hostname, 'A', [(ipv4addr, False)]),
                     #    powerdns.RRSet(hostname, 'AAAA', [(ipv6addr, False)]),
                     #])
                     ptr_v4_zone.create_records([
-                        powerdns.RRSet(ptr_v4, 'PTR', [(hostname, False)])
+                        powerdns.RRSet(ptr_v4_name, 'PTR', [(hostname, False)])
                     ])
                     ptr_v6_zone.create_records([
-                        powerdns.RRSet(ptr_v6, 'PTR', [(hostname, False)])
+                        powerdns.RRSet(ptr_v6_name, 'PTR', [(hostname, False)])
                     ])
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(instancename))
