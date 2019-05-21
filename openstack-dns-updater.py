@@ -80,8 +80,9 @@ class DnsUpdater(ConsumerMixin):
             instancename = jbody["payload"]["hostname"]
             if FQDN(str(instancename)).is_valid:
                 log.debug('Instancename is a valide FQDN')
-                zone = self.suggested_zone(instancename + '.')
-                hostname = instancename.replace(zone.name + '.', "")
+                fqdn = instancename + '.'
+                zone = self.suggested_zone(fqdn)
+                hostname = fqdn.replace(zone.name, "")
                 if event_type == EVENT_CREATE:
                     fixed_ips0 = jbody["payload"]["fixed_ips"][0]["address"]
                     fixed_ips1 = jbody["payload"]["fixed_ips"][1]["address"]
@@ -94,19 +95,15 @@ class DnsUpdater(ConsumerMixin):
                     log.info("Adding {} {} {}".format(instancename, ipv4addr, ipv6addr))
                     ptr_v4 = ipaddress.ip_address(ipv4addr).reverse_pointer
                     ptr_v6 = ipaddress.ip_address(ipv6addr).reverse_pointer
-                    ptr_v4_zone = self.suggested_zone(ptr_v4 + '.')
-                    ptr_v6_zone = self.suggested_zone(ptr_v6 + '.')
-                    ptr_v4_name = ptr_v4.replace(ptr_v4_zone.name + '.', "")
-                    ptr_v6_name = ptr_v6.replace(ptr_v6_zone.name + '.', "")
-                    log.debug(hostname)
-                    log.debug(ptr_v4_zone)
-                    log.debug(ptr_v6_zone)
-                    log.debug(ptr_v4_zone.name)
-                    log.debug(ptr_v6_zone.name)
-                    log.debug(ptr_v4)
-                    log.debug(ptr_v6)
+                    fq_ptr_v4 = ptr_v4 + '.'
+                    fq_ptr_v6 = ptr_v6 + '.'
+                    ptr_v4_zone = self.suggested_zone(fq_ptr_v4)
+                    ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
+                    ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")
+                    ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")
                     log.debug(ptr_v4_name)
                     log.debug(ptr_v6_name)
+                    log.debug(hostname)
                     log.debug(instancename + '.')
                     #zone.create_records([
                     #    powerdns.RRSet(hostname, 'A', [(ipv4addr, False)]),
