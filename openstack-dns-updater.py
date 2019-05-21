@@ -82,7 +82,7 @@ class DnsUpdater(ConsumerMixin):
                 log.debug('Instancename is a valide FQDN')
                 fqdn = instancename + '.'
                 zone = self.suggested_zone(fqdn)
-                hostname = fqdn.replace(zone.name, "")
+                hostname = fqdn.replace(zone.name, "")[:-1]
                 if event_type == EVENT_CREATE:
                     fixed_ips0 = jbody["payload"]["fixed_ips"][0]["address"]
                     fixed_ips1 = jbody["payload"]["fixed_ips"][1]["address"]
@@ -99,8 +99,8 @@ class DnsUpdater(ConsumerMixin):
                     fq_ptr_v6 = ptr_v6 + '.'
                     ptr_v4_zone = self.suggested_zone(fq_ptr_v4)
                     ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
-                    ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")
-                    ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")
+                    ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
+                    ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")[:-1]
                     log.debug(ptr_v4_name)
                     log.debug(ptr_v6_name)
                     log.debug(hostname)
