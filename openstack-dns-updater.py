@@ -116,21 +116,19 @@ class DnsUpdater(ConsumerMixin):
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(instancename))
                     result = api.servers[0].search(instancename)
-                    fq_ptr_v4 = self.get_reverse_pointer(result[0]['content'])
-                    fq_ptr_v6 = self.get_reverse_pointer(result[1]['content'])
-                    ptr_v4_zone = self.suggested_zone(fq_ptr_v4)
-                    ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
-                    ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
-                    ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")[:-1]
+                    i = 0
+                    while i < len(search):
+                        if search[i]['type'] == 'A' or search[i]['type'] == 'AAAA':
+                            fq_ptr = self.get_reverse_pointer(search[i]['content'])
+                            ptr_zone = self.suggested_zone(fq_ptr)
+                            ptr_name = fq_ptr.replace(ptr_zone.name, "")[:-1]
+                            ptr_zone.delete_record([
+                                powerdns.RRSet(ptr_name, 'PTR', [])
+                            ])
+                        i += 1
                     zone.delete_record([
                         powerdns.RRSet(hostname, 'A', []),
                         powerdns.RRSet(hostname, 'AAAA', []),
-                    ])
-                    ptr_v4_zone.delete_record([
-                        powerdns.RRSet(ptr_v4_name, 'PTR', [])
-                    ])
-                    ptr_v6_zone.delete_record([
-                        powerdns.RRSet(ptr_v6_name, 'PTR', [])
                     ])
 
 
