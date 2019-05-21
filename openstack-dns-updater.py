@@ -113,10 +113,10 @@ class DnsUpdater(ConsumerMixin):
                     ])
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(instancename))
-                    #zone.delete_record([
-                    #    powerdns.RRSet(hostname, 'A', []),
-                    #    powerdns.RRSet(hostname, 'AAAA', []),
-                    #])
+                    zone.delete_record([
+                        powerdns.RRSet(hostname, 'A', []),
+                        powerdns.RRSet(hostname, 'AAAA', []),
+                    ])
 
 if __name__ == "__main__":
     log.info("Connecting to broker {}".format(BROKER_URI))
