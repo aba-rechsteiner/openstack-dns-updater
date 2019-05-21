@@ -101,20 +101,16 @@ class DnsUpdater(ConsumerMixin):
                     ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
                     ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
                     ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")[:-1]
-                    log.debug(ptr_v4_name)
-                    log.debug(ptr_v6_name)
-                    log.debug(hostname)
-                    log.debug(instancename + '.')
-                    #zone.create_records([
-                    #    powerdns.RRSet(hostname, 'A', [(ipv4addr, False)]),
-                    #    powerdns.RRSet(hostname, 'AAAA', [(ipv6addr, False)]),
-                    #])
-                    #ptr_v4_zone.create_records([
-                    #    powerdns.RRSet(ptr_v4_name, 'PTR', [(instancename + '.', False)])
-                    #])
-                    #ptr_v6_zone.create_records([
-                    #    powerdns.RRSet(ptr_v6_name, 'PTR', [(instancename + '.', False)])
-                    #])
+                    zone.create_records([
+                        powerdns.RRSet(hostname, 'A', [(ipv4addr, False)]),
+                        powerdns.RRSet(hostname, 'AAAA', [(ipv6addr, False)]),
+                    ])
+                    ptr_v4_zone.create_records([
+                        powerdns.RRSet(ptr_v4_name, 'PTR', [(instancename + '.', False)])
+                    ])
+                    ptr_v6_zone.create_records([
+                        powerdns.RRSet(ptr_v6_name, 'PTR', [(instancename + '.', False)])
+                    ])
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(instancename))
                     #zone.delete_record([
