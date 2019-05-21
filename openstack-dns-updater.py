@@ -98,6 +98,7 @@ class DnsUpdater(ConsumerMixin):
                     ptr_v6_zone = self.suggested_zone(ptr_v6 + '.')
                     ptr_v4_name = ptr_v4.replace(ptr_v4_zone.name, "")
                     ptr_v6_name = ptr_v6.replace(ptr_v6_zone.name, "")
+                    log.debug(hostname)
                     log.debug(ptr_v4_zone)
                     log.debug(ptr_v6_zone)
                     log.debug(ptr_v4_zone.name)
