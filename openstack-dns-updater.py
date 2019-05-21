@@ -67,19 +67,23 @@ class DnsUpdater(ConsumerMixin):
         except Exception, e:
             log.info(repr(e))
 
+    def suggested_zone(self, name):
+        suggested_zone = api.servers[0].suggest_zone(name)
+        return api.servers[0].get_zone(suggested_zone.name)
+
     def _handle_message(self, body):
-        log.debug('Body: %r' % body)
+        #log.debug('Body: %r' % body)
         jbody = json.loads(body["oslo.message"])
         event_type = jbody["event_type"]
+        log.debug('Event-Type: %r' % event_type)
         if event_type == EVENT_CREATE or event_type == EVENT_DELETE:
             instancename = jbody["payload"]["hostname"]
             fqdn = instancename + '.'
             if FQDN(str(fqdn)).is_valid:
                 log.debug('FQDN is valide')
-                suggested_zone = api.servers[0].suggest_zone(fqdn)
-                zone = api.servers[0].get_zone(suggested_zone.name)
-                hostname = fqdn.replace(zone.name, "")
-                record = hostname[:-1]
+                zone = self.suggested_zone(fqdn)
+                _hostname = fqdn.replace(zone.name, "")
+                hostname = _hostname[:-1]
                 if event_type == EVENT_CREATE:
                     fixed_ips0 = jbody["payload"]["fixed_ips"][0]["address"]
                     fixed_ips1 = jbody["payload"]["fixed_ips"][1]["address"]
@@ -90,16 +94,26 @@ class DnsUpdater(ConsumerMixin):
                         ipv4addr = fixed_ips1
                         ipv6addr = fixed_ips0
                     log.info("Adding {} {} {}".format(fqdn, ipv4addr, ipv6addr))
-                    zone.create_records([
-                        powerdns.RRSet(record, 'A', [(ipv4addr, False)]),
-                        powerdns.RRSet(record, 'AAAA', [(ipv6addr, False)]),
+                    ptr_v4 = ipaddress.ip_address(ipv4addr).reverse_pointer
+                    ptr_v6 = ipaddress.ip_address(ipv6addr).reverse_pointer
+                    ptr_v4_zone = self.suggested_zone(ptr_v4)
+                    ptr_v6_zone = self.suggested_zone(ptr_v6)
+                    #zone.create_records([
+                    #    powerdns.RRSet(hostname, 'A', [(ipv4addr, False)]),
+                    #    powerdns.RRSet(hostname, 'AAAA', [(ipv6addr, False)]),
+                    #])
+                    ptr_v4_zone.create_records([
+                        powerdns.RRSet(ptr_v4, 'PTR', [(hostname, False)])
+                    ])
+                    ptr_v6_zone.create_records([
+                        powerdns.RRSet(ptr_v6, 'PTR', [(hostname, False)])
                     ])
                 if event_type == EVENT_DELETE:
                     log.info("Deleting {}".format(fqdn))
-                    zone.delete_record([
-                        powerdns.RRSet(record, 'A', []),
-                        powerdns.RRSet(record, 'AAAA', []),
-                    ])
+                    #zone.delete_record([
+                    #    powerdns.RRSet(hostname, 'A', []),
+                    #    powerdns.RRSet(hostname, 'AAAA', []),
+                    #])
 
 if __name__ == "__main__":
     log.info("Connecting to broker {}".format(BROKER_URI))
