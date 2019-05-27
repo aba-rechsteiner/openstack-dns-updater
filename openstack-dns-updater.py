@@ -90,7 +90,8 @@ class DnsUpdater(ConsumerMixin):
                 if event_type == EVENT_CREATE:
                     fixed_ips0 = jbody["payload"]["fixed_ips"][0]["address"]
                     fixed_ips1 = jbody["payload"]["fixed_ips"][1]["address"]
-                    if ipaddress.IPv4Address(fixed_ips0):
+                    ips0 = ipaddress.ip_address(fixed_ips0)
+                    if ips0.version == 4:
                         ipv4addr = fixed_ips0
                         ipv6addr = fixed_ips1
                     else:
