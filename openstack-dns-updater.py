@@ -123,7 +123,7 @@ class DnsUpdater(ConsumerMixin):
                             fq_ptr = self.get_reverse_pointer(result[i]['content'])
                             ptr_zone = self.suggested_zone(fq_ptr)
                             ptr_name = fq_ptr.replace(ptr_zone.name, "")[:-1]
-                            log.info("Deleting {}".format(ptr_name))
+                            log.info("Deleting {}".format(fq_ptr))
                             ptr_zone.delete_record([
                                 powerdns.RRSet(ptr_name, 'PTR', [])
                             ])
