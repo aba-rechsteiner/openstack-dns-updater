@@ -43,7 +43,6 @@ BROKER_URI = config['AMQP']['BROKER_URI']
 PDNS_API = config['POWERDNS']['PDNS_API']
 PDNS_KEY = config['POWERDNS']['PDNS_KEY']
 
-ttl = 3600
 api_client = powerdns.PDNSApiClient(api_endpoint=PDNS_API, api_key=PDNS_KEY)
 api = powerdns.PDNSEndpoint(api_client)
 
@@ -105,8 +104,10 @@ class DnsUpdater(ConsumerMixin):
                     ptr_v6_zone = self.suggested_zone(fq_ptr_v6)
                     ptr_v4_name = fq_ptr_v4.replace(ptr_v4_zone.name, "")[:-1]
                     ptr_v6_name = fq_ptr_v6.replace(ptr_v6_zone.name, "")[:-1]
-                    if '.dev.' in hostname:
+                    if '.dev.' in fqdn:
                         ttl = 300
+                    else:
+                        ttl = 3600
                     zone.create_records([
                         powerdns.RRSet(hostname, 'A', [(ipv4addr, False)], ttl),
                         powerdns.RRSet(hostname, 'AAAA', [(ipv6addr, False)], ttl),
