@@ -12,3 +12,9 @@ OpenStack DNS Updater works well on Debian 9.
 
 For more information refer to:
 http://alesnosek.com/blog/2015/05/31/openstack-dynamic-dns-updates/
+
+## add rabbitmq user
+```bash
+sudo rabbitmqctl add_user dns_updater <password>
+sudo rabbitmqctl set_permissions dns_updater ".*" ".*" ".*"
+```
